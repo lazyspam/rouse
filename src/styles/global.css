@@ -1,0 +1,128 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter/opsz.css";
+@import "@xterm/xterm/css/xterm.css";
+
+/* rouse palette: muffle's flat graphite surfaces, one warm amber accent
+   (gitswitch is cyan, muffle lavender, rouse amber). */
+@theme {
+  --color-bg: #0e0f11;
+  --color-surface: #15171a;
+  --color-raised: #1c1f23;
+  --color-line: rgb(255 255 255 / 0.06);
+  --color-fg: #e6e7ea;
+  --color-muted: #9a9ea7;
+  --color-dim: #80858e;
+  --color-accent: #f0a35e;
+  --color-accent-strong: #e8893a;
+  --color-warn: #f5b971;
+  --color-danger: #f28b8b;
+  /* Running. Kept off the accent so "running" never reads as "selected". */
+  --color-ok: #8fd4a8;
+
+  --font-sans: "SF Pro Text", -apple-system, "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+
+  /* macOS text styles, as in muffle. Use these, not raw sizes. */
+  --text-title3: 15px;
+  --text-title3--line-height: 20px;
+  --text-title3--font-weight: 600;
+  --text-title3--letter-spacing: -0.005em;
+  --text-headline: 13px;
+  --text-headline--line-height: 16px;
+  --text-headline--font-weight: 600;
+  --text-body: 13px;
+  --text-body--line-height: 16px;
+  --text-callout: 12px;
+  --text-callout--line-height: 15px;
+  --text-subheadline: 11px;
+  --text-subheadline--line-height: 14px;
+  --text-footnote: 10px;
+  --text-footnote--line-height: 13px;
+}
+
+html,
+body {
+  background: transparent;
+}
+
+body {
+  user-select: none;
+  -webkit-user-select: none;
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+}
+
+input,
+textarea {
+  caret-color: var(--color-accent);
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+::selection {
+  background: rgb(240 163 94 / 0.3);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 0.08);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(255 255 255 / 0.16);
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Keyboard focus only, in the accent; mouse clicks stay quiet. */
+:focus-visible {
+  outline: 2px solid rgb(240 163 94 / 0.6);
+  outline-offset: 1px;
+}
+input:focus-visible,
+textarea:focus-visible,
+[tabindex="-1"]:focus-visible {
+  outline: none;
+}
+
+/* WebKitGTK judders on main-thread transforms; give spinners their own layer. */
+.animate-spin {
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* The terminal sits on the page surface, not xterm's black. */
+.xterm,
+.xterm .xterm-viewport {
+  background-color: var(--color-bg) !important;
+}
+.xterm .xterm-viewport::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 0.08);
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+}
+.sheet-in {
+  animation: sheet-in 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet-in {
+    animation: none;
+  }
+}
