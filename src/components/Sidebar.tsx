@@ -5,9 +5,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Add01Icon,
   ArrowRight01Icon,
-  Folder01Icon,
   FolderSearchIcon,
-  Layers01Icon,
   PlayIcon,
   Search01Icon,
   Settings02Icon,
@@ -48,6 +46,10 @@ export type Actions = {
 };
 
 type SidebarProps = {
+  icons: Record<string, string>;
+  version: string;
+  onCheckUpdates: () => void;
+  updateStatus: string;
   roots: { groups: GroupNode[]; projects: ProjectNode[] };
   states: Record<string, State>;
   selection: Selection;
@@ -56,18 +58,25 @@ type SidebarProps = {
   actions: Actions;
 };
 
-export function Sidebar({ roots, states, selection, query, onQuery, actions }: SidebarProps) {
-  const ctx = { states, selection, actions };
+export function Sidebar({ roots, states, selection, query, onQuery, actions, icons, version, onCheckUpdates, updateStatus }: SidebarProps) {
+  const ctx = { states, selection, actions, icons };
   const empty = roots.groups.length === 0 && roots.projects.length === 0;
   return (
-    <aside className="flex w-72 shrink-0 flex-col border-r border-line bg-surface">
+    <aside className="flex w-64 shrink-0 flex-col bg-surface">
       <div data-tauri-drag-region className="flex h-12 shrink-0 items-center gap-2 px-4">
         <img src={logo} alt="" className="pointer-events-none h-5 w-5" />
         <span className="pointer-events-none text-headline">rouse</span>
+        <button
+          onClick={onCheckUpdates}
+          title="Check for updates"
+          className="ml-auto rounded px-1 text-footnote text-dim tabular-nums hover:bg-raised hover:text-fg"
+        >
+          {updateStatus === "checking" ? "checking…" : updateStatus === "latest" ? `v${version} · latest` : `v${version}`}
+        </button>
       </div>
 
       <div className="px-2.5 pb-2">
-        <label className="flex h-7 items-center gap-2 rounded-md bg-bg px-2 ring-1 ring-line focus-within:ring-accent/40">
+        <label className="flex h-7 items-center gap-2 rounded-md bg-raised/60 px-2 focus-within:ring-1 focus-within:ring-accent/40">
           <HugeiconsIcon icon={Search01Icon} size={13} strokeWidth={2} className="shrink-0 text-dim" />
           <input
             value={query}
@@ -88,7 +97,7 @@ export function Sidebar({ roots, states, selection, query, onQuery, actions }: S
         ))}
       </nav>
 
-      <div className="flex items-center gap-1 border-t border-line px-2.5 py-2">
+      <div className="flex items-center gap-1 px-2.5 py-2">
         <button
           onClick={actions.scan}
           className="flex h-8 flex-1 items-center gap-2 rounded-md px-2.5 text-body text-muted transition-colors hover:bg-raised hover:text-fg"
@@ -103,7 +112,7 @@ export function Sidebar({ roots, states, selection, query, onQuery, actions }: S
   );
 }
 
-type RowCtx = { states: Record<string, State>; selection: Selection; actions: Actions; depth: number };
+type RowCtx = { states: Record<string, State>; selection: Selection; actions: Actions; icons: Record<string, string>; depth: number };
 
 const pad = (depth: number) => ({ paddingLeft: 8 + depth * 14 });
 
@@ -165,13 +174,13 @@ function RunToggle({ live, onStart, onStop, what }: { live: boolean; onStart: ()
 function Count({ live, total }: { live: number; total: number }) {
   if (!live) return null;
   return (
-    <span className="ml-auto flex shrink-0 items-center gap-1 pr-1 text-subheadline tabular-nums text-ok group-hover:hidden">
+    <span className="ml-auto flex shrink-0 items-center gap-1 pr-1 text-subheadline tabular-nums text-dim group-hover:hidden">
       {live}/{total}
     </span>
   );
 }
 
-function GroupRow({ node, depth, states, selection, actions }: RowCtx & { node: GroupNode }) {
+function GroupRow({ node, depth, states, selection, actions, icons }: RowCtx & { node: GroupNode }) {
   const g = node.group;
   const services = groupServices(node);
   const live = liveCount(services, states);
@@ -214,17 +223,16 @@ function GroupRow({ node, depth, states, selection, actions }: RowCtx & { node: 
             className={cn("transition-transform", !g.collapsed && "rotate-90")}
           />
         </button>
-        <HugeiconsIcon icon={Layers01Icon} size={14} strokeWidth={1.8} className={cn("shrink-0", live ? "text-accent" : "text-dim")} />
-        <span className="min-w-0 truncate font-medium">{g.name}</span>
+        <span className={cn("min-w-0 truncate font-medium", !selected && "text-fg")}>{g.name}</span>
         <Count live={live} total={services.length} />
       </Row>
       {!g.collapsed && (
         <>
           {node.groups.map((c) => (
-            <GroupRow key={c.group.id} node={c} depth={depth + 1} states={states} selection={selection} actions={actions} />
+            <GroupRow key={c.group.id} node={c} depth={depth + 1} states={states} selection={selection} actions={actions} icons={icons} />
           ))}
           {node.projects.map((p) => (
-            <ProjectRow key={p.project.id} node={p} depth={depth + 1} states={states} selection={selection} actions={actions} />
+            <ProjectRow key={p.project.id} node={p} depth={depth + 1} states={states} selection={selection} actions={actions} icons={icons} />
           ))}
         </>
       )}
@@ -232,7 +240,7 @@ function GroupRow({ node, depth, states, selection, actions }: RowCtx & { node: 
   );
 }
 
-function ProjectRow({ node, depth, states, selection, actions }: RowCtx & { node: ProjectNode }) {
+function ProjectRow({ node, depth, states, selection, actions, icons }: RowCtx & { node: ProjectNode }) {
   const p = node.project;
   const live = liveCount(node.services, states);
   const selected = selection?.kind === "project" && selection.id === p.id;
@@ -263,16 +271,21 @@ function ProjectRow({ node, depth, states, selection, actions }: RowCtx & { node
           </>
         }
       >
-        <span className="w-3 shrink-0" />
-        <HugeiconsIcon icon={Folder01Icon} size={14} strokeWidth={1.8} className={cn("shrink-0", live ? "text-accent" : "text-dim")} />
+        <ProjectLogo src={icons[p.id]} />
         <span className="min-w-0 truncate">{p.name}</span>
         <Count live={live} total={node.services.length} />
       </Row>
       {node.services.map((s) => (
-        <ServiceRow key={s.id} service={s} depth={depth + 1} states={states} selection={selection} actions={actions} />
+        <ServiceRow key={s.id} service={s} depth={depth + 1} states={states} selection={selection} actions={actions} icons={icons} />
       ))}
     </>
   );
+}
+
+/** The project's own logo (from its index.html or favicon), or a quiet gap. */
+export function ProjectLogo({ src, size = 14 }: { src?: string; size?: number }) {
+  if (!src) return <span className="shrink-0" style={{ width: size }} />;
+  return <img src={src} alt="" width={size} height={size} className="shrink-0 rounded-[3px] object-contain" />;
 }
 
 function ServiceRow({ service: s, depth, states, selection, actions }: RowCtx & { service: Service }) {

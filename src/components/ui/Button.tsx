@@ -12,8 +12,8 @@ export function Button({ variant = "secondary", className, ...props }: ButtonPro
       className={cn(
         "inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-md px-3 text-body transition-colors disabled:cursor-not-allowed",
         variant === "primary" &&
-          "bg-accent font-medium text-bg hover:bg-accent/85 disabled:bg-raised disabled:text-dim disabled:ring-1 disabled:ring-line",
-        variant === "secondary" && "bg-raised text-fg ring-1 ring-line hover:bg-raised/70 disabled:opacity-50",
+          "bg-accent font-medium text-black hover:bg-accent-strong disabled:bg-raised disabled:text-dim",
+        variant === "secondary" && "bg-raised text-fg hover:bg-white/12 disabled:opacity-50",
         variant === "ghost" && "text-muted hover:bg-raised hover:text-fg disabled:opacity-50",
         variant === "danger" && "text-danger hover:bg-danger/10 disabled:opacity-50",
         variant === "danger-soft" &&

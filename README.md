@@ -8,19 +8,26 @@ Muffle quiets things down; rouse wakes them up. Same family as [GitSwitch](https
 
 ## Install
 
-Download the `.deb` from [Releases](https://github.com/iput-object/rouse/releases) and install it:
+Download from [Releases](https://github.com/iput-object/rouse/releases):
+
+| Platform | Files |
+| --- | --- |
+| Linux | `.deb` (Debian, Ubuntu), `.rpm` (Fedora, openSUSE), `.AppImage` (any distro) |
+| Windows | `.msi` or the `-setup.exe` installer |
+| macOS | `.dmg` for Apple Silicon (`aarch64`) or Intel (`x64`) |
 
 ```sh
-sudo apt install ./rouse_0.1.0_amd64.deb
+sudo apt install ./rouse_0.1.1_amd64.deb      # Debian, Ubuntu
+sudo dnf install ./rouse-0.1.1-1.x86_64.rpm   # Fedora
 ```
 
-Linux only for now (Tauri 2, WebKitGTK).
+The macOS and Windows builds aren't signed yet, so the first launch asks you to confirm (macOS: right-click → Open). On Windows there is no login shell to read, Stop ends the process tree with `taskkill`, and crash cleanup is Linux-only.
 
 ## How it works
 
 1. **Scan a folder.** rouse reads `package.json` scripts (with the right package manager from your lockfile), compose files, `Cargo.toml`, Makefiles, `go.mod` and `manage.py`. Nothing in a repo is run while scanning. `node_modules`, `target`, build output and dot-folders are skipped, and symlinks are not followed.
 2. **Tick what you use.** The usual dev command is pre-ticked (`start:dev` for Nest, `tauri dev` for Tauri apps, `dev` elsewhere). Groups follow your folders: `code/shop/api` lands in **code › shop**.
-3. **Start anything.** A command, a project, or a whole group (subgroups included) starts from the tree. Each command runs in its own terminal, so colours, watch modes and prompts work. Detected ports show as links.
+3. **Start anything.** A command, a project, or a whole group (subgroups included) starts from the tree. Each command runs in its own terminal, so colours, watch modes and prompts work. Detected ports show as links, and each project shows its own logo, read from the icon link in its `index.html` or its favicon.
 
 Rescanning only adds what's new. It never duplicates a project or undoes a rename, a move or an edited command.
 
@@ -81,7 +88,13 @@ ROUSE_SCAN=~/code cargo test --lib scan_real -- --ignored --nocapture
 ROUSE_ACCEPT=~/code/shop cargo test --lib acceptance -- --ignored --nocapture
 ```
 
-Build a package: `pnpm tauri build --bundles deb` (or `appimage`).
+## Releasing
+
+1. Bump the version in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`.
+2. Commit, then tag and push: `git tag v0.1.2 && git push origin main v0.1.2`.
+3. The Release workflow builds Linux, Windows and macOS, signs every bundle for the updater and uploads `latest.json`. Installed copies offer the update in the status bar.
+
+Builds are signed with the key in the `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` repository secrets. A local `pnpm tauri build` needs the same two variables set.
 
 Data lives in `~/.local/share/com.iput-object.rouse/rouse.db`.
 

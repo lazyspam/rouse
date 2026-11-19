@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "rouse",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "com.iput-object.rouse",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -27,13 +27,29 @@
     ],
     "security": {
       "csp": null
-    }
+    },
+    "macOSPrivateApi": true
   },
   "bundle": {
     "active": true,
-    "targets": ["deb", "appimage"],
+    "targets": "all",
     "category": "DeveloperTool",
     "shortDescription": "Start your dev projects from one window",
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.png"]
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/iput-object/rouse/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEZFMTNDRUZBMzBBMUE4NDIKUldSQ3FLRXcrczRUL2dFbDNIS25QbzhpK2tBTzFkd2FKV2VObENCeER1eFBRUXhEZ1N5TzFKQ2UK"
+    }
   }
 }

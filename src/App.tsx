@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { openPath } from "@tauri-apps/plugin-opener";
 import { api, message, portBusy, type Group, type Level, type OneOff, type Project, type Service } from "./services/tauri";
 import { useRouse } from "./hooks/useRouse";
+import { useUpdater } from "./hooks/useUpdater";
 import { buildTree, filterTree, groupPath, type GroupNode, type ProjectNode, type Selection } from "./utils/tree";
 import { Sidebar, type Actions } from "./components/Sidebar";
 import { StatusBar, type Notice } from "./components/StatusBar";
@@ -28,7 +29,8 @@ const SELECTION_KEY = "rouse.selection";
 function App() {
   const [notice, setNotice] = useState<Notice | null>(null);
   const notify = useCallback((text: string, tone: Notice["tone"] = "info") => setNotice({ text, tone }), []);
-  const { tree, states, refresh } = useRouse(notify);
+  const { tree, states, icons, refresh } = useRouse(notify);
+  const updater = useUpdater();
   const [selection, setSelection] = useState<Selection>(() => {
     try {
       return JSON.parse(localStorage.getItem(SELECTION_KEY) ?? "null");
@@ -213,6 +215,7 @@ function App() {
         return (
           <ProjectView
             node={node}
+            icon={icons[node.project.id]}
             states={states}
             actions={actions}
             breadcrumb={crumb(node.project.groupId)}
@@ -222,7 +225,7 @@ function App() {
     }
     if (selection?.kind === "group") {
       const node = find.groups.get(selection.id);
-      if (node) return <GroupView node={node} states={states} actions={actions} breadcrumb={crumb(node.group.parentId)} />;
+      if (node) return <GroupView node={node} states={states} icons={icons} actions={actions} breadcrumb={crumb(node.group.parentId)} />;
     }
     return (
       <>
@@ -236,10 +239,21 @@ function App() {
     <div className="relative flex h-screen w-screen flex-col overflow-hidden rounded-xl bg-bg ring-1 ring-line">
       <ResizeHandles />
       <div className="flex min-h-0 flex-1">
-        <Sidebar roots={shown} states={states} selection={selection} query={query} onQuery={setQuery} actions={actions} />
+        <Sidebar
+          roots={shown}
+          states={states}
+          selection={selection}
+          query={query}
+          onQuery={setQuery}
+          actions={actions}
+          icons={icons}
+          version={__APP_VERSION__}
+          onCheckUpdates={() => void updater.checkNow()}
+          updateStatus={updater.status.phase}
+        />
         <main className="relative flex min-w-0 flex-1 flex-col">{page()}</main>
       </div>
-      <StatusBar states={states} notice={notice} onStopAll={() => void run(api.stopAll(), "Stopped everything")} />
+      <StatusBar states={states} notice={notice} updater={updater} onStopAll={() => void run(api.stopAll(), "Stopped everything")} />
 
       {modal?.kind === "scan" && tree && <ScanDialog tree={tree} onClose={() => setModal(null)} onImported={(m) => (refresh(), notify(m))} />}
       {modal?.kind === "edit" && (

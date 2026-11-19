@@ -9,6 +9,7 @@
 mod acceptance;
 mod commands;
 mod env;
+mod icons;
 mod orphans;
 mod overrides;
 mod procs;
@@ -40,6 +41,8 @@ pub fn run() {
     }
 
     let app = builder
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
@@ -132,6 +135,7 @@ pub fn run() {
             commands::set_overrides,
             commands::get_effective,
             commands::save_variant,
+            commands::get_project_icons,
         ])
         .build(tauri::generate_context!())
         .expect("error while building rouse");

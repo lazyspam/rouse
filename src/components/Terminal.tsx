@@ -7,27 +7,29 @@ import { FitAddon } from "@xterm/addon-fit";
 import { api, onEvent, type Id } from "../services/tauri";
 import { copyText, readText } from "../utils/clipboard";
 
+// Your tools' colours, kept vivid: the app's chrome is black, white and one primary, the
+// logs are not.
 const THEME = {
-  background: "#0e0f11",
-  foreground: "#e6e7ea",
-  cursor: "#f0a35e",
-  cursorAccent: "#0e0f11",
-  selectionBackground: "rgba(240, 163, 94, 0.3)",
-  black: "#1c1f23",
-  brightBlack: "#80858e",
-  red: "#f28b8b",
-  brightRed: "#f7a8a8",
-  green: "#8fd4a8",
-  brightGreen: "#a9e2bd",
-  yellow: "#f5b971",
-  brightYellow: "#f8cb91",
-  blue: "#8ab4f8",
-  brightBlue: "#a8c7fa",
-  magenta: "#c3a6f7",
-  brightMagenta: "#d4bdfa",
-  cyan: "#7fd1d8",
-  brightCyan: "#9fdde3",
-  white: "#c9cbd0",
+  background: "#090909",
+  foreground: "#e8e8e8",
+  cursor: "#ff8a3d",
+  cursorAccent: "#090909",
+  selectionBackground: "rgba(255, 138, 61, 0.3)",
+  black: "#1e1e1e",
+  brightBlack: "#7a7a7a",
+  red: "#ff5f57",
+  brightRed: "#ff7b72",
+  green: "#3fd67a",
+  brightGreen: "#6ee79b",
+  yellow: "#ffcc33",
+  brightYellow: "#ffd966",
+  blue: "#4ea1ff",
+  brightBlue: "#79b8ff",
+  magenta: "#c678ff",
+  brightMagenta: "#d69bff",
+  cyan: "#2ed3e6",
+  brightCyan: "#67e4f0",
+  white: "#d6d6d6",
   brightWhite: "#ffffff",
 };
 
@@ -141,5 +143,9 @@ export function Terminal({
     if (clearSignal) term.current?.clear();
   }, [clearSignal]);
 
-  return <div ref={host} className="min-h-0 flex-1 overflow-hidden px-4 py-3" />;
+  return (
+    <div className="mx-3 mb-3 flex min-h-0 flex-1 rounded-lg bg-surface">
+      <div ref={host} className="min-h-0 flex-1 overflow-hidden px-3 py-2.5" />
+    </div>
+  );
 }

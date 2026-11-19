@@ -5,6 +5,9 @@
 //! user's login shell for its environment, the way VS Code does, and run every command with
 //! it. rc files can hang or print noise, so the capture has a timeout and a start marker.
 
+// Windows has no login shell to ask; the capture code below is Unix-only.
+#![cfg_attr(windows, allow(dead_code, unused_imports))]
+
 use std::collections::HashMap;
 use std::io::Read;
 use std::process::{Command, Stdio};
@@ -18,6 +21,14 @@ pub fn login_env(timeout: Duration) -> HashMap<String, String> {
     capture(timeout).unwrap_or_else(|| std::env::vars().collect())
 }
 
+/// Windows apps already get the user's environment from the registry; there's no login
+/// shell to ask.
+#[cfg(windows)]
+fn capture(_timeout: Duration) -> Option<HashMap<String, String>> {
+    None
+}
+
+#[cfg(not(windows))]
 fn capture(timeout: Duration) -> Option<HashMap<String, String>> {
     let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".into());
     // -l reads profile files, -i reads rc files (where nvm usually lives).

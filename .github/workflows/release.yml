@@ -1,0 +1,77 @@
+name: "Release"
+
+# Push a tag like v0.1.1 and every platform is built and attached to one release:
+# Linux (.deb, .rpm, .AppImage), Windows (.msi, .exe), macOS (.dmg, .app, Apple Silicon and Intel),
+# each signed for the in-app updater, plus the latest.json it reads.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build-and-release:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      # Serialized: every platform job uploads its own latest.json to the same
+      # release; parallel uploads race and 404. Releases are infrequent, so the
+      # slower sequential build is worth the reliable updater manifest.
+      max-parallel: 1
+      matrix:
+        include:
+          # 22.04 rather than latest: an older glibc keeps the AppImage running on more distros.
+          - platform: "ubuntu-22.04"
+            args: ""
+          - platform: "windows-latest"
+            args: ""
+          - platform: "macos-latest"
+            args: "--target aarch64-apple-darwin"
+          - platform: "macos-latest"
+            args: "--target x86_64-apple-darwin"
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - uses: pnpm/action-setup@v6
+        name: Install pnpm
+        with:
+          version: 12
+          run_install: false
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Install Dependencies (Ubuntu)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf rpm
+
+      - name: Install Frontend Dependencies
+        run: pnpm install
+
+      - name: Build & Release Tauri App
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          # From the app version, not the ref: a manual run on main would otherwise
+          # publish a release on a tag called "main".
+          tagName: v__VERSION__
+          releaseName: "rouse v__VERSION__"
+          releaseBody: "See the assets below to download and install this version."
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}

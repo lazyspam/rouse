@@ -25,7 +25,7 @@ export function Dialog({ title, description, onClose, footer, wide, children }: 
       <div
         onMouseDown={(e) => e.stopPropagation()}
         className={cn(
-          "sheet-in flex max-h-full w-full flex-col rounded-xl bg-surface shadow-2xl shadow-black/50 ring-1 ring-line",
+          "sheet-in flex max-h-full w-full flex-col rounded-xl bg-[#141414] shadow-2xl shadow-black/60 ring-1 ring-line",
           wide ? "max-w-3xl" : "max-w-md",
         )}
       >
@@ -37,7 +37,7 @@ export function Dialog({ title, description, onClose, footer, wide, children }: 
           <IconButton icon={Cancel01Icon} label="Close" onClick={onClose} />
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4">{children}</div>
-        {footer && <div className="flex items-center justify-end gap-2 border-t border-line px-5 py-3">{footer}</div>}
+        {footer && <div className="flex items-center justify-end gap-2 px-5 pt-1 pb-4">{footer}</div>}
       </div>
     </div>
   );

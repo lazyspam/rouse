@@ -154,7 +154,7 @@ pub fn resolve(levels: &[Level], command: &str, project_dir: &Path, cwd: &str, s
         env: env.into_values().collect(),
         port,
         port_flag,
-        shell: pick(levels, |o| o.shell.clone().filter(|s| !s.trim().is_empty()), "/bin/sh".to_string()),
+        shell: pick(levels, |o| o.shell.clone().filter(|s| !s.trim().is_empty()), crate::procs::default_shell().to_string()),
         stop_signal: pick(levels, |o| o.stop_signal, StopSignal::Term),
         grace_seconds: pick(levels, |o| o.grace_seconds, 5),
         auto_restart: pick(levels, |o| o.auto_restart, false),
@@ -268,7 +268,7 @@ mod tests {
         assert_eq!(e.grace_seconds, Sourced { value: 10, source: "global".into() });
         assert_eq!(e.stop_signal.value, StopSignal::Int);
         assert_eq!(e.auto_restart, Sourced { value: true, source: "project api".into() });
-        assert_eq!(e.shell, Sourced { value: "/bin/sh".into(), source: "default".into() });
+        assert_eq!(e.shell, Sourced { value: crate::procs::default_shell().into(), source: "default".into() });
         assert_eq!(e.depends_on, [7]);
         assert!(e.warnings.is_empty());
     }

@@ -7,9 +7,12 @@ import { api, message, onEvent, type State, type Tree } from "../services/tauri"
 export function useRouse(notify: (text: string, tone?: "info" | "error") => void) {
   const [tree, setTree] = useState<Tree | null>(null);
   const [states, setStates] = useState<Record<string, State>>({});
+  const [icons, setIcons] = useState<Record<string, string>>({});
 
+  // Logos are re-read with every refresh, so a changed favicon shows up without a rescan.
   const refresh = useCallback(() => {
     api.tree().then(setTree).catch((e) => notify(message(e), "error"));
+    api.projectIcons().then(setIcons).catch(() => {});
   }, [notify]);
 
   useEffect(() => {
@@ -23,5 +26,5 @@ export function useRouse(notify: (text: string, tone?: "info" | "error") => void
     };
   }, [refresh]);
 
-  return { tree, states, refresh };
+  return { tree, states, icons, refresh };
 }

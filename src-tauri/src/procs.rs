@@ -114,7 +114,7 @@ impl Spec {
             command: command.into(),
             cwd: cwd.into(),
             env: HashMap::new(),
-            shell: "/bin/sh".into(),
+            shell: default_shell().into(),
             stop_signal: StopSignal::Term,
             grace: Duration::from_secs(5),
             auto_restart: false,
@@ -241,7 +241,7 @@ impl Manager {
 
         let mut cmd = CommandBuilder::new(&spec.shell);
         // No `exec` prefix: it would break compound commands (`a && b`, `x; exit 3`).
-        cmd.args(["-c", &spec.command]);
+        cmd.args(shell_args(&spec.shell, &spec.command));
         cmd.cwd(&spec.cwd);
         cmd.env_clear();
         for (k, v) in self.0.env.iter().chain(spec.env.iter()) {
@@ -565,8 +565,40 @@ fn signal_group(pid: u32, signal: Signal) {
     }
 }
 
-#[cfg(not(unix))]
-fn signal_group(_pid: u32, _signal: Signal) {}
+/// Windows has no process groups or signals: `taskkill /T` ends the whole tree, politely
+/// first (console tools often refuse that), then with `/F` once the grace period is over.
+#[cfg(windows)]
+fn signal_group(pid: u32, signal: Signal) {
+    use std::os::windows::process::CommandExt;
+    if pid == 0 {
+        return;
+    }
+    let mut cmd = std::process::Command::new("taskkill");
+    cmd.args(["/PID", &pid.to_string(), "/T"]);
+    if matches!(signal, Signal::Kill) {
+        cmd.arg("/F");
+    }
+    // CREATE_NO_WINDOW: no console flashing up on every Stop.
+    cmd.creation_flags(0x0800_0000).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null());
+    let _ = cmd.status();
+}
+
+/// The shell commands run in when no override sets one.
+pub fn default_shell() -> &'static str {
+    if cfg!(windows) { "cmd.exe" } else { "/bin/sh" }
+}
+
+/// How each shell takes a command line: `cmd /C`, `pwsh -Command`, everything else `-c`.
+fn shell_args(shell: &str, command: &str) -> Vec<String> {
+    // Split on both separators so Windows paths parse the same everywhere.
+    let file = shell.rsplit(['/', '\\']).next().unwrap_or(shell).to_ascii_lowercase();
+    let name = file.strip_suffix(".exe").unwrap_or(&file);
+    match name {
+        "cmd" => vec!["/C".into(), command.into()],
+        "powershell" | "pwsh" => vec!["-NoProfile".into(), "-Command".into(), command.into()],
+        _ => vec!["-c".into(), command.into()],
+    }
+}
 
 fn wait_exit(exited: &(Mutex<bool>, Condvar), timeout: Duration) -> bool {
     let (lock, cvar) = exited;
@@ -874,5 +906,12 @@ mod behaviour {
         m.stop(8);
         assert_ne!(m.generation(8), generation);
         assert_eq!(m.states().get(&8), Some(&State::Stopped));
+    }
+
+    #[test]
+    fn shells_get_their_own_command_flag() {
+        assert_eq!(shell_args("/bin/zsh", "x"), ["-c", "x"]);
+        assert_eq!(shell_args("C:\\Windows\\System32\\cmd.exe", "x"), ["/C", "x"]);
+        assert_eq!(shell_args("pwsh", "x"), ["-NoProfile", "-Command", "x"]);
     }
 }

@@ -5,7 +5,7 @@ import { cn } from "../utils/cn";
 export function StatusDot({ state, className }: { state: State | undefined; className?: string }) {
   const tone =
     state?.state === "running"
-      ? "bg-ok shadow-[0_0_0_3px_rgb(143_212_168/0.15)]"
+      ? "bg-ok shadow-[0_0_0_3px_rgb(255_138_61/0.18)]"
       : state?.state === "stopping" || state?.state === "restarting" || state?.state === "waiting"
         ? "bg-warn animate-pulse"
         : state?.state === "exited" && state.code !== 0

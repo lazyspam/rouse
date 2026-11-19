@@ -8,12 +8,10 @@ import {
   Add01Icon,
   ArrowUpRight01Icon,
   Copy01Icon,
-  EraserIcon,
   Folder01Icon,
   FolderSearchIcon,
   PencilEdit02Icon,
   PlayIcon,
-  RefreshIcon,
   StopIcon,
 } from "@hugeicons/core-free-icons";
 import logo from "../assets/logo.svg";
@@ -27,7 +25,7 @@ import { Menu } from "./ui/Menu";
 import { StatusDot, stateLabel } from "./StatusDot";
 import { Terminal } from "./Terminal";
 import { TitleBar } from "./TitleBar";
-import type { Actions } from "./Sidebar";
+import { ProjectLogo, type Actions } from "./Sidebar";
 
 const since = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
@@ -44,9 +42,10 @@ function PortLink({ port }: { port: number }) {
   );
 }
 
+/** A quiet fact in the status line: plain text, a dot before it. */
 function Badge({ children, title }: { children: React.ReactNode; title: string }) {
   return (
-    <span title={title} className="shrink-0 rounded px-1.5 py-0.5 text-footnote text-muted ring-1 ring-line">
+    <span title={title} className="shrink-0 text-callout text-dim before:mr-3 before:content-['·']">
       {children}
     </span>
   );
@@ -111,21 +110,24 @@ export function ServiceView({
           label="More actions"
           items={[
             { label: "Start with…", onSelect: () => actions.startWith(service) },
+            { label: "Copy output", onSelect: () => void copyOutput(false) },
+            {
+              label: "Clear output",
+              onSelect: () => {
+                void api.clearOutput(service.id);
+                setClear((n) => n + 1);
+              },
+            },
             { label: "Open folder", onSelect: () => actions.openFolder(cwd) },
             "divider",
             { label: "Remove command", danger: true, onSelect: () => actions.deleteService(service) },
           ]}
         />
-        <IconButton icon={Copy01Icon} label="Copy output" onClick={() => void copyOutput(false)} />
-        <IconButton
-          icon={EraserIcon}
-          label="Clear output"
-          onClick={() => {
-            void api.clearOutput(service.id);
-            setClear((n) => n + 1);
-          }}
-        />
-        {live && <IconButton icon={RefreshIcon} label="Restart" onClick={() => void api.restart(service.id)} />}
+        {live && (
+          <Button variant="ghost" onClick={() => void api.restart(service.id)}>
+            Restart
+          </Button>
+        )}
         {live ? (
           <Button variant="secondary" disabled={state?.state === "stopping"} onClick={() => actions.stop(service.id)}>
             <HugeiconsIcon icon={StopIcon} size={13} strokeWidth={2} />
@@ -139,7 +141,7 @@ export function ServiceView({
         )}
       </TitleBar>
 
-      <div className="flex h-9 shrink-0 items-center gap-3 border-b border-line px-6 text-callout">
+      <div className="flex h-8 shrink-0 items-center gap-3 px-6 text-callout">
         <span className="flex items-center gap-2 text-muted">
           <StatusDot state={state} />
           {stateLabel(state)}
@@ -181,7 +183,7 @@ export function ServiceView({
 function CommandRow({ service, state, actions, onSelect, onEdit }: { service: Service; state: State | undefined; actions: Actions; onSelect: () => void; onEdit: () => void }) {
   const live = isLive(state);
   return (
-    <div onClick={onSelect} className="group flex h-12 cursor-default items-center gap-3 rounded-lg px-3 ring-1 ring-line transition-colors hover:bg-raised/50">
+    <div onClick={onSelect} className="group flex h-12 cursor-default items-center gap-3 rounded-lg bg-surface px-3 transition-colors hover:bg-raised/60">
       <StatusDot state={state} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -205,12 +207,14 @@ function CommandRow({ service, state, actions, onSelect, onEdit }: { service: Se
 
 export function ProjectView({
   node,
+  icon,
   states,
   actions,
   onEditService,
   breadcrumb,
 }: {
   node: ProjectNode;
+  icon?: string;
   states: Record<string, State>;
   actions: Actions;
   onEditService: (s: Service) => void;
@@ -233,7 +237,10 @@ export function ProjectView({
           ))}
       </TitleBar>
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-        <p className="mb-4 font-mono text-callout text-dim">{p.path}</p>
+        <div className="mb-4 flex items-center gap-2">
+          {icon && <ProjectLogo src={icon} size={18} />}
+          <p className="font-mono text-callout text-dim">{p.path}</p>
+        </div>
         <div className="mb-2 flex items-center">
           <h2 className="flex-1 text-headline">Commands</h2>
           <Button variant="ghost" onClick={() => actions.addCommand(p)}>
@@ -259,16 +266,19 @@ export function ProjectView({
   );
 }
 
-function ProjectCard({ node, states, actions }: { node: ProjectNode; states: Record<string, State>; actions: Actions }) {
+function ProjectCard({ node, states, actions, icon }: { node: ProjectNode; states: Record<string, State>; actions: Actions; icon?: string }) {
   const live = liveCount(node.services, states);
   const ports = node.services.flatMap((s) => {
     const st = states[s.id];
     return st?.state === "running" && st.port ? [st.port] : [];
   });
   return (
-    <div className={cn("flex flex-col rounded-xl p-3.5 ring-1 transition-colors", live ? "bg-accent/6 ring-accent/25" : "bg-surface ring-line")}>
+    <div className={cn("flex flex-col rounded-xl bg-surface p-3.5 transition-colors", live > 0 && "ring-1 ring-accent/30")}>
       <button className="min-w-0 text-left" onClick={() => actions.select({ kind: "project", id: node.project.id })}>
-        <p className="truncate text-headline hover:text-accent">{node.project.name}</p>
+        <p className="flex items-center gap-2 truncate text-headline hover:text-accent">
+          {icon && <ProjectLogo src={icon} size={16} />}
+          {node.project.name}
+        </p>
         <p className="mt-1 flex items-center gap-1.5 text-subheadline text-muted tabular-nums">
           {live ? (
             <>
@@ -281,7 +291,7 @@ function ProjectCard({ node, states, actions }: { node: ProjectNode; states: Rec
           )}
         </p>
       </button>
-      <ul className="mt-3 mb-3 flex flex-col gap-1.5 border-t border-line pt-3">
+      <ul className="mt-3 mb-3 flex flex-col gap-1.5">
         {node.services.slice(0, 3).map((s) => (
           <li key={s.id} className="flex h-5 items-center gap-2">
             <StatusDot state={states[s.id]} />
@@ -310,7 +320,19 @@ function ProjectCard({ node, states, actions }: { node: ProjectNode; states: Rec
   );
 }
 
-export function GroupView({ node, states, actions, breadcrumb }: { node: GroupNode; states: Record<string, State>; actions: Actions; breadcrumb: string }) {
+export function GroupView({
+  node,
+  states,
+  icons,
+  actions,
+  breadcrumb,
+}: {
+  node: GroupNode;
+  states: Record<string, State>;
+  icons: Record<string, string>;
+  actions: Actions;
+  breadcrumb: string;
+}) {
   const services = groupServices(node);
   const live = liveCount(services, states);
   // Projects of this group and every subgroup, nearest first.
@@ -347,7 +369,7 @@ export function GroupView({ node, states, actions, breadcrumb }: { node: GroupNo
               {all
                 .filter((a) => a.label === label)
                 .map((a) => (
-                  <ProjectCard key={a.node.project.id} node={a.node} states={states} actions={actions} />
+                  <ProjectCard key={a.node.project.id} node={a.node} states={states} actions={actions} icon={icons[a.node.project.id]} />
                 ))}
             </div>
           </section>

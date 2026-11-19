@@ -137,6 +137,8 @@ export const api = {
   updateService: (service: Service) => invoke<void>("update_service", { service }),
   deleteService: (id: Id) => invoke<void>("delete_service", { id }),
 
+  /** Project id → logo as a data URL, read from each project's index.html or favicon. */
+  projectIcons: () => invoke<Record<string, string>>("get_project_icons"),
   getOverrides: (level: Level, id: Id) => invoke<Overrides>("get_overrides", { level, id }),
   setOverrides: (level: Level, id: Id, overrides: Overrides) => invoke<void>("set_overrides", { level, id, overrides }),
   effective: (id: Id) => invoke<Effective>("get_effective", { id }),

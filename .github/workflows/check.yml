@@ -1,0 +1,53 @@
+name: "Check"
+
+# Builds on every platform the release ships for, and runs the tests on Linux, before a
+# tag ever goes out. The tests start real processes and use Linux-only bits (/proc, bash).
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ["ubuntu-22.04", "windows-latest", "macos-latest"]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - uses: pnpm/action-setup@v6
+        name: Install pnpm
+        with:
+          version: 12
+          run_install: false
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Dependencies (Ubuntu)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Build the frontend
+        run: |
+          pnpm install
+          pnpm build
+
+      - name: Build the app
+        working-directory: src-tauri
+        run: cargo build
+
+      - name: Test
+        if: matrix.platform == 'ubuntu-22.04'
+        working-directory: src-tauri
+        run: cargo test --lib

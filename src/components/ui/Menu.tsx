@@ -30,13 +30,14 @@ export function Menu({ items, label, className, trigger }: { items: MenuItem[]; 
         <IconButton icon={MoreHorizontalIcon} label={label} size="sm" onClick={() => setOpen((o) => !o)} />
       )}
       {open && (
-        <div className="sheet-in absolute top-full right-0 z-40 mt-1 min-w-44 rounded-lg bg-raised p-1 shadow-xl shadow-black/40 ring-1 ring-line">
+        <div role="menu" className="sheet-in absolute top-full right-0 z-40 mt-1 min-w-44 rounded-lg bg-raised p-1 shadow-xl shadow-black/40 ring-1 ring-line">
           {items.map((item, i) =>
             item === "divider" ? (
-              <div key={i} className="my-1 h-px bg-line" />
+              <div key={i} role="separator" className="my-1 h-px bg-line" />
             ) : (
               <button
                 key={item.label}
+                role="menuitem"
                 onClick={() => {
                   setOpen(false);
                   item.onSelect();
