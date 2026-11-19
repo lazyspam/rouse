@@ -15,7 +15,7 @@ import {
   StopIcon,
 } from "@hugeicons/core-free-icons";
 import logo from "../assets/logo.svg";
-import { api, isLive, type Effective, type Project, type Service, type State, type Tree } from "../services/tauri";
+import { api, isLive, type Effective, type Logo, type Project, type Service, type State, type Tree } from "../services/tauri";
 import { groupServices, liveCount, type GroupNode, type ProjectNode } from "../utils/tree";
 import { cn } from "../utils/cn";
 import { copyText, plainText } from "../utils/clipboard";
@@ -25,7 +25,8 @@ import { Menu } from "./ui/Menu";
 import { StatusDot, stateLabel } from "./StatusDot";
 import { Terminal } from "./Terminal";
 import { TitleBar } from "./TitleBar";
-import { ProjectLogo, type Actions } from "./Sidebar";
+import type { Actions } from "./Sidebar";
+import { ProjectLogo } from "./ProjectLogo";
 
 const since = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
@@ -214,7 +215,7 @@ export function ProjectView({
   breadcrumb,
 }: {
   node: ProjectNode;
-  icon?: string;
+  icon?: Logo;
   states: Record<string, State>;
   actions: Actions;
   onEditService: (s: Service) => void;
@@ -238,7 +239,7 @@ export function ProjectView({
       </TitleBar>
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
         <div className="mb-4 flex items-center gap-2">
-          {icon && <ProjectLogo src={icon} size={18} />}
+          {icon && <ProjectLogo logo={icon} size={18} />}
           <p className="font-mono text-callout text-dim">{p.path}</p>
         </div>
         <div className="mb-2 flex items-center">
@@ -266,7 +267,7 @@ export function ProjectView({
   );
 }
 
-function ProjectCard({ node, states, actions, icon }: { node: ProjectNode; states: Record<string, State>; actions: Actions; icon?: string }) {
+function ProjectCard({ node, states, actions, icon }: { node: ProjectNode; states: Record<string, State>; actions: Actions; icon?: Logo }) {
   const live = liveCount(node.services, states);
   const ports = node.services.flatMap((s) => {
     const st = states[s.id];
@@ -276,7 +277,7 @@ function ProjectCard({ node, states, actions, icon }: { node: ProjectNode; state
     <div className={cn("flex flex-col rounded-xl bg-surface p-3.5 transition-colors", live > 0 && "ring-1 ring-accent/30")}>
       <button className="min-w-0 text-left" onClick={() => actions.select({ kind: "project", id: node.project.id })}>
         <p className="flex items-center gap-2 truncate text-headline hover:text-accent">
-          {icon && <ProjectLogo src={icon} size={16} />}
+          {icon && <ProjectLogo logo={icon} size={16} />}
           {node.project.name}
         </p>
         <p className="mt-1 flex items-center gap-1.5 text-subheadline text-muted tabular-nums">
@@ -329,7 +330,7 @@ export function GroupView({
 }: {
   node: GroupNode;
   states: Record<string, State>;
-  icons: Record<string, string>;
+  icons: Record<string, Logo>;
   actions: Actions;
   breadcrumb: string;
 }) {

@@ -102,6 +102,9 @@ export type RouseEvent =
 export const isLive = (s: State | undefined) =>
   s?.state === "running" || s?.state === "stopping" || s?.state === "restarting" || s?.state === "waiting";
 
+/** A project's own icon (a data: URL), or its stack's logo by simple-icons slug. */
+export type Logo = { kind: "image"; src: string } | { kind: "tech"; slug: string };
+
 export const api = {
   tree: () => invoke<Tree>("get_tree"),
   states: () => invoke<Record<string, State>>("get_states"),
@@ -138,7 +141,7 @@ export const api = {
   deleteService: (id: Id) => invoke<void>("delete_service", { id }),
 
   /** Project id → logo as a data URL, read from each project's index.html or favicon. */
-  projectIcons: () => invoke<Record<string, string>>("get_project_icons"),
+  projectIcons: () => invoke<Record<string, Logo>>("get_project_icons"),
   getOverrides: (level: Level, id: Id) => invoke<Overrides>("get_overrides", { level, id }),
   setOverrides: (level: Level, id: Id, overrides: Overrides) => invoke<void>("set_overrides", { level, id, overrides }),
   effective: (id: Id) => invoke<Effective>("get_effective", { id }),

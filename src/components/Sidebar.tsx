@@ -12,9 +12,10 @@ import {
   StopIcon,
 } from "@hugeicons/core-free-icons";
 import logo from "../assets/logo.svg";
-import { isLive, type Group, type Id, type Project, type Service, type State } from "../services/tauri";
+import { isLive, type Group, type Id, type Logo, type Project, type Service, type State } from "../services/tauri";
 import { groupServices, liveCount, type GroupNode, type ProjectNode, type Selection } from "../utils/tree";
 import { cn } from "../utils/cn";
+import { ProjectLogo } from "./ProjectLogo";
 import { IconButton } from "./ui/IconButton";
 import { Menu } from "./ui/Menu";
 import { StatusDot } from "./StatusDot";
@@ -46,7 +47,7 @@ export type Actions = {
 };
 
 type SidebarProps = {
-  icons: Record<string, string>;
+  icons: Record<string, Logo>;
   version: string;
   onCheckUpdates: () => void;
   updateStatus: string;
@@ -112,7 +113,7 @@ export function Sidebar({ roots, states, selection, query, onQuery, actions, ico
   );
 }
 
-type RowCtx = { states: Record<string, State>; selection: Selection; actions: Actions; icons: Record<string, string>; depth: number };
+type RowCtx = { states: Record<string, State>; selection: Selection; actions: Actions; icons: Record<string, Logo>; depth: number };
 
 const pad = (depth: number) => ({ paddingLeft: 8 + depth * 14 });
 
@@ -271,7 +272,7 @@ function ProjectRow({ node, depth, states, selection, actions, icons }: RowCtx &
           </>
         }
       >
-        <ProjectLogo src={icons[p.id]} />
+        <ProjectLogo logo={icons[p.id]} />
         <span className="min-w-0 truncate">{p.name}</span>
         <Count live={live} total={node.services.length} />
       </Row>
@@ -282,11 +283,6 @@ function ProjectRow({ node, depth, states, selection, actions, icons }: RowCtx &
   );
 }
 
-/** The project's own logo (from its index.html or favicon), or a quiet gap. */
-export function ProjectLogo({ src, size = 14 }: { src?: string; size?: number }) {
-  if (!src) return <span className="shrink-0" style={{ width: size }} />;
-  return <img src={src} alt="" width={size} height={size} className="shrink-0 rounded-[3px] object-contain" />;
-}
 
 function ServiceRow({ service: s, depth, states, selection, actions }: RowCtx & { service: Service }) {
   const state = states[s.id];

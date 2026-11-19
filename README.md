@@ -27,7 +27,7 @@ The macOS and Windows builds aren't signed yet, so the first launch asks you to 
 
 1. **Scan a folder.** rouse reads `package.json` scripts (with the right package manager from your lockfile), compose files, `Cargo.toml`, Makefiles, `go.mod` and `manage.py`. Nothing in a repo is run while scanning. `node_modules`, `target`, build output and dot-folders are skipped, and symlinks are not followed.
 2. **Tick what you use.** The usual dev command is pre-ticked (`start:dev` for Nest, `tauri dev` for Tauri apps, `dev` elsewhere). Groups follow your folders: `code/shop/api` lands in **code › shop**.
-3. **Start anything.** A command, a project, or a whole group (subgroups included) starts from the tree. Each command runs in its own terminal, so colours, watch modes and prompts work. Detected ports show as links, and each project shows its own logo, read from the icon link in its `index.html` or its favicon.
+3. **Start anything.** A command, a project, or a whole group (subgroups included) starts from the tree. Each command runs in its own terminal, so colours, watch modes and prompts work. Detected ports show as links, and each project shows its own logo, read from the icon link in its `index.html` or its favicon. A project without one gets its stack's logo (NestJS, Express, Next.js, Vite, Rust, Go, Django…), guessed from its dependencies.
 
 Rescanning only adds what's new. It never duplicates a project or undoes a rename, a move or an edited command.
 

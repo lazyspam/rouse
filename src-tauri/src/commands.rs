@@ -313,11 +313,11 @@ pub fn set_overrides(state: TauriState<AppState>, level: String, id: Id, overrid
     state.store.set_overrides(&level, id, &o).map_err(err)
 }
 
-/// Each project's logo as a data URL, read fresh from its index.html or favicon files.
+/// Each project's logo, read fresh: its own icon from index.html or favicon files, else its stack's.
 #[tauri::command]
-pub async fn get_project_icons(state: TauriState<'_, AppState>) -> Res<HashMap<Id, String>> {
+pub async fn get_project_icons(state: TauriState<'_, AppState>) -> Res<HashMap<Id, crate::icons::Logo>> {
     let projects: Vec<(Id, String)> = state.store.tree().map_err(err)?.projects.into_iter().map(|p| (p.id, p.path)).collect();
-    blocking(move || Ok(projects.into_iter().filter_map(|(id, path)| crate::icons::project_icon(Path::new(&path)).map(|url| (id, url))).collect())).await
+    blocking(move || Ok(projects.into_iter().filter_map(|(id, path)| crate::icons::project_logo(Path::new(&path)).map(|logo| (id, logo))).collect())).await
 }
 
 /// What a command would run with right now, every value with its source.
