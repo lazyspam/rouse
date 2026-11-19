@@ -66,9 +66,7 @@ export function StatusBar({ states, notice, onStopAll, updater }: Props) {
           </span>
         ) : hasUpdateNote(updater) ? (
           <UpdateNote updater={updater} />
-        ) : (
-          <span className="text-dim">Closing the window keeps things running · quit from the tray stops them</span>
-        )}
+        ) : null}
       </div>
     </footer>
   );

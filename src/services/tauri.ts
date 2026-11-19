@@ -102,8 +102,8 @@ export type RouseEvent =
 export const isLive = (s: State | undefined) =>
   s?.state === "running" || s?.state === "stopping" || s?.state === "restarting" || s?.state === "waiting";
 
-/** A project's own icon (a data: URL), or its stack's logo by simple-icons slug. */
-export type Logo = { kind: "image"; src: string } | { kind: "tech"; slug: string };
+/** A project's own icon (a data: URL) and its stack (a simple-icons slug), either may be missing. */
+export type Logo = { src: string | null; tech: string | null };
 
 export const api = {
   tree: () => invoke<Tree>("get_tree"),

@@ -35,6 +35,8 @@ Rescanning only adds what's new. It never duplicates a project or undoes a renam
 | --- | --- |
 | ![Scan dialog with suggested commands](docs/screenshots/scan.png) | ![Group view with running projects and ports](docs/screenshots/group.png) |
 
+![A project page: its stack and folder, then each command with its URL and uptime](docs/screenshots/project.png)
+
 ## Overrides
 
 Settings cascade: **defaults (gear) → group → subgroup → … → project → command**. The closest level that sets something wins, and the command editor shows every value with where it came from ("SIGINT, from group shop").

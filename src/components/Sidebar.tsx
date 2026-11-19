@@ -150,7 +150,7 @@ function Row({
     >
       {children}
       {actions && (
-        <div className="ml-auto flex items-center opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+        <div className="absolute inset-y-0 right-1 flex items-center opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
           {actions}
         </div>
       )}
@@ -175,7 +175,7 @@ function RunToggle({ live, onStart, onStop, what }: { live: boolean; onStart: ()
 function Count({ live, total }: { live: number; total: number }) {
   if (!live) return null;
   return (
-    <span className="ml-auto flex shrink-0 items-center gap-1 pr-1 text-subheadline tabular-nums text-dim group-hover:hidden">
+    <span className="ml-auto flex shrink-0 items-center gap-1 pr-2 text-subheadline tabular-nums text-dim group-hover:invisible">
       {live}/{total}
     </span>
   );
@@ -300,7 +300,7 @@ function ServiceRow({ service: s, depth, states, selection, actions }: RowCtx & 
         <StatusDot state={state} />
       </span>
       <span className="min-w-0 truncate text-callout">{s.name}</span>
-      {port && <span className="ml-auto shrink-0 pr-1 font-mono text-footnote text-dim group-hover:hidden">:{port}</span>}
+      {port && <span className="ml-auto shrink-0 pr-2 font-mono text-footnote text-dim group-hover:invisible">:{port}</span>}
     </Row>
   );
 }

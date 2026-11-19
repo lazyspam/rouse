@@ -13,19 +13,20 @@ use base64::Engine;
 use regex::Regex;
 use serde::Serialize;
 
-/// What to show for a project.
+/// What to show for a project: its own icon and the stack it is built with. The app draws
+/// the stack's logo when there is no icon, and names the stack either way.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(tag = "kind", rename_all = "lowercase")]
-pub enum Logo {
+pub struct Logo {
     /// Its own icon, as a `data:` URL.
-    Image { src: String },
-    /// Its stack's logo, by icon slug (simple-icons naming).
-    Tech { slug: &'static str },
+    pub src: Option<String>,
+    /// Its stack, by icon slug (simple-icons naming).
+    pub tech: Option<&'static str>,
 }
 
-/// The project's own logo, else its stack's, else None.
+/// The project's icon and stack, or None when neither is known.
 pub fn project_logo(dir: &Path) -> Option<Logo> {
-    project_icon(dir).map(|src| Logo::Image { src }).or_else(|| tech(dir).map(|slug| Logo::Tech { slug }))
+    let logo = Logo { src: project_icon(dir), tech: tech(dir) };
+    (logo.src.is_some() || logo.tech.is_some()).then_some(logo)
 }
 
 /// package.json dependencies that name a stack, most specific first: a desktop shell or
@@ -249,7 +250,7 @@ mod tests {
             }
             project_logo(tmp.path())
         };
-        let tech = |slug| Some(Logo::Tech { slug });
+        let tech = |slug| Some(Logo { src: None, tech: Some(slug) });
         // NestJS uses express underneath; the framework wins.
         assert_eq!(case(&[("package.json", r#"{"dependencies":{"@nestjs/core":"11","express":"5"}}"#)]), tech("nestjs"));
         assert_eq!(case(&[("package.json", r#"{"dependencies":{"express":"5"}}"#)]), tech("express"));
@@ -265,7 +266,9 @@ mod tests {
         assert_eq!(case(&[("Makefile", "run:")]), None);
         // Its own icon still comes first.
         let own = case(&[("package.json", r#"{"dependencies":{"express":"5"}}"#), ("public/favicon.svg", "<svg/>")]);
-        assert!(matches!(own, Some(Logo::Image { .. })));
+        let own = own.unwrap();
+        assert!(own.src.unwrap().starts_with("data:image/svg+xml"));
+        assert_eq!(own.tech, Some("express"));
     }
 
     #[test]

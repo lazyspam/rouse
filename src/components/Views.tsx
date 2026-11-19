@@ -26,9 +26,9 @@ import { StatusDot, stateLabel } from "./StatusDot";
 import { Terminal } from "./Terminal";
 import { TitleBar } from "./TitleBar";
 import type { Actions } from "./Sidebar";
-import { ProjectLogo } from "./ProjectLogo";
+import { LogoTile, techName } from "./ProjectLogo";
+import { duration, useNow } from "../utils/time";
 
-const since = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
 function PortLink({ port }: { port: number }) {
   return (
@@ -43,13 +43,19 @@ function PortLink({ port }: { port: number }) {
   );
 }
 
-/** A quiet fact in the status line: plain text, a dot before it. */
+/** A quiet fact in the status line: plain text, dots between neighbours. */
 function Badge({ children, title }: { children: React.ReactNode; title: string }) {
   return (
-    <span title={title} className="shrink-0 text-callout text-dim before:mr-3 before:content-['·']">
+    <span title={title} className="shrink-0 text-callout text-dim [&+&]:before:mr-3 [&+&]:before:content-['·']">
       {children}
     </span>
   );
+}
+
+/** How long it has been running, ticking. */
+function Uptime({ since }: { since: number }) {
+  const now = useNow(1000);
+  return <span className="text-dim tabular-nums">for {duration(now - since)}</span>;
 }
 
 export function ServiceView({
@@ -143,30 +149,34 @@ export function ServiceView({
       </TitleBar>
 
       <div className="flex h-8 shrink-0 items-center gap-3 px-6 text-callout">
-        <span className="flex items-center gap-2 text-muted">
+        <span className="flex items-center gap-2 text-muted" title={`$ ${effective?.command ?? service.command}\nin ${cwd}`}>
           <StatusDot state={state} />
           {stateLabel(state)}
-          {state?.state === "running" && <span className="text-dim">since {since(state.startedAt)} · pid {state.pid}</span>}
+          {state?.state === "running" && <Uptime since={state.startedAt} />}
         </span>
+        {state?.state === "running" && state.port && <PortLink port={state.port} />}
+        {restarts > 0 && <span title="Automatic restarts since you started it" className="text-callout text-dim">↻ {restarts}</span>}
         {crashed && (
           <button onClick={() => void copyOutput(true)} className="inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-callout text-danger ring-1 ring-danger/30 hover:bg-danger/10">
             <HugeiconsIcon icon={Copy01Icon} size={12} strokeWidth={2} />
             Copy crash log
           </button>
         )}
-        {state?.state === "running" && state.port && <PortLink port={state.port} />}
-        {restarts > 0 && <Badge title="Automatic restarts since you started it">↻ {restarts}</Badge>}
-        {effective?.port && <Badge title={`Port set on ${effective.port.source}`}>port {effective.port.value}</Badge>}
-        {deps.length > 0 && <Badge title="Started first and waited for">after {deps.join(", ")}</Badge>}
-        {effective && effective.stopSignal.value !== "SIGTERM" && <Badge title={`From ${effective.stopSignal.source}`}>{effective.stopSignal.value}</Badge>}
-        {effective?.autoRestart.value && <Badge title={`From ${effective.autoRestart.source}`}>auto-restart</Badge>}
-        {effective && effective.warnings.length > 0 && (
-          <span title={effective.warnings.join("\n")} className="shrink-0 text-footnote text-warn">
-            {effective.warnings.length} warning{effective.warnings.length === 1 ? "" : "s"}
-          </span>
-        )}
-        <span className="ml-auto min-w-0 truncate font-mono text-footnote text-dim" title={`${effective?.command ?? service.command}\n${cwd}`}>
-          <span className="text-muted">$ {effective?.command ?? service.command}</span> · {cwd}
+        <span className="ml-auto flex min-w-0 items-center gap-3">
+          {!live && (
+            <span className="min-w-0 truncate font-mono text-footnote text-dim" title={cwd}>
+              $ {effective?.command ?? service.command}
+            </span>
+          )}
+          {effective?.port && state?.state !== "running" && <Badge title={`Port set on ${effective.port.source}`}>port {effective.port.value}</Badge>}
+          {deps.length > 0 && <Badge title="Started first and waited for">after {deps.join(", ")}</Badge>}
+          {effective && effective.stopSignal.value !== "SIGTERM" && <Badge title={`From ${effective.stopSignal.source}`}>{effective.stopSignal.value}</Badge>}
+          {effective?.autoRestart.value && <Badge title={`From ${effective.autoRestart.source}`}>auto-restart</Badge>}
+          {effective && effective.warnings.length > 0 && (
+            <span title={effective.warnings.join("\n")} className="shrink-0 text-callout text-warn">
+              {effective.warnings.length} warning{effective.warnings.length === 1 ? "" : "s"}
+            </span>
+          )}
         </span>
       </div>
 
@@ -183,22 +193,32 @@ export function ServiceView({
 
 function CommandRow({ service, state, actions, onSelect, onEdit }: { service: Service; state: State | undefined; actions: Actions; onSelect: () => void; onEdit: () => void }) {
   const live = isLive(state);
+  const crashed = state?.state === "exited" && (state.gaveUp || state.code !== 0);
   return (
-    <div onClick={onSelect} className="group flex h-12 cursor-default items-center gap-3 rounded-lg bg-surface px-3 transition-colors hover:bg-raised/60">
+    <div onClick={onSelect} className="group flex h-14 cursor-default items-center gap-3 px-4 transition-colors hover:bg-white/[0.025]">
       <StatusDot state={state} />
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="text-headline">{service.name}</span>
-          {state?.state === "running" && state.port && <span className="font-mono text-footnote text-dim">:{state.port}</span>}
-        </div>
-        <p className="truncate font-mono text-footnote text-dim">{service.command}</p>
+        <p className={cn("truncate text-body font-medium", live ? "text-fg" : "text-muted")}>{service.name}</p>
+        <p className="mt-0.5 truncate font-mono text-footnote text-dim">{service.command}</p>
       </div>
-      <span className="text-subheadline text-dim">{stateLabel(state)}</span>
+      {state?.state === "running" ? (
+        <>
+          {state.port && <PortLink port={state.port} />}
+          <span className="w-16 text-right text-callout text-dim">
+            <Uptime since={state.startedAt} />
+          </span>
+        </>
+      ) : (
+        <span className={cn("truncate text-callout", crashed ? "text-danger" : "text-dim")}>{state ? stateLabel(state) : ""}</span>
+      )}
       <IconButton icon={PencilEdit02Icon} label="Edit" onClick={(e) => (e.stopPropagation(), onEdit())} className="text-muted opacity-0 hover:bg-raised hover:text-fg group-hover:opacity-100" />
       {live ? (
-        <Button onClick={(e) => (e.stopPropagation(), actions.stop(service.id))}>Stop</Button>
+        <Button onClick={(e) => (e.stopPropagation(), actions.stop(service.id))} className="min-w-16">
+          Stop
+        </Button>
       ) : (
-        <Button variant="primary" onClick={(e) => (e.stopPropagation(), actions.start(service.id))}>
+        <Button variant="ghost" onClick={(e) => (e.stopPropagation(), actions.start(service.id))} className="min-w-16 text-muted hover:text-accent">
+          <HugeiconsIcon icon={PlayIcon} size={12} strokeWidth={2} />
           Start
         </Button>
       )}
@@ -223,10 +243,10 @@ export function ProjectView({
 }) {
   const p = node.project;
   const live = liveCount(node.services, states);
+  const stack = techName(icon);
   return (
     <>
       <TitleBar title={p.name} subtitle={breadcrumb}>
-        <IconButton icon={Folder01Icon} label="Open folder" onClick={() => actions.openFolder(p.path)} />
         {node.services.length > 0 &&
           (live ? (
             <Button onClick={() => actions.stopProject(p.id)}>Stop all</Button>
@@ -237,30 +257,54 @@ export function ProjectView({
             </Button>
           ))}
       </TitleBar>
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-        <div className="mb-4 flex items-center gap-2">
-          {icon && <ProjectLogo logo={icon} size={18} />}
-          <p className="font-mono text-callout text-dim">{p.path}</p>
-        </div>
-        <div className="mb-2 flex items-center">
-          <h2 className="flex-1 text-headline">Commands</h2>
-          <Button variant="ghost" onClick={() => actions.addCommand(p)}>
-            <HugeiconsIcon icon={Add01Icon} size={13} />
-            Add a command
-          </Button>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          {node.services.length === 0 && <p className="text-callout text-dim">No commands yet. Add the one you run while developing.</p>}
-          {node.services.map((s) => (
-            <CommandRow
-              key={s.id}
-              service={s}
-              state={states[s.id]}
-              actions={actions}
-              onSelect={() => actions.select({ kind: "service", id: s.id })}
-              onEdit={() => onEditService(s)}
-            />
-          ))}
+      <div className="min-h-0 flex-1 overflow-y-auto px-6 pt-4 pb-6">
+        <div className="max-w-3xl">
+          <div className="mb-7 flex items-center gap-3">
+            <LogoTile logo={icon} name={p.name} />
+            <div className="min-w-0 flex-1">
+              <p className="text-headline">{stack ?? "Project"}</p>
+              <button
+                onClick={() => actions.openFolder(p.path)}
+                title="Open folder"
+                className="mt-1 flex max-w-full items-center gap-1.5 truncate font-mono text-footnote text-dim hover:text-fg"
+              >
+                <HugeiconsIcon icon={Folder01Icon} size={11} className="shrink-0" />
+                <span className="truncate">{p.path}</span>
+              </button>
+            </div>
+            <span className="text-callout text-dim tabular-nums">
+              {node.services.length === 0 ? "" : live ? `${live} of ${node.services.length} running` : "Nothing running"}
+            </span>
+          </div>
+
+          <div className="mb-2 flex items-center">
+            <h2 className="flex-1 text-subheadline font-medium tracking-wide text-dim uppercase">Commands</h2>
+            <Button variant="ghost" onClick={() => actions.addCommand(p)} className="text-muted">
+              <HugeiconsIcon icon={Add01Icon} size={12} />
+              Add a command
+            </Button>
+          </div>
+          {node.services.length === 0 ? (
+            <button
+              onClick={() => actions.addCommand(p)}
+              className="flex h-20 w-full items-center justify-center rounded-xl border border-dashed border-line text-callout text-dim hover:text-fg"
+            >
+              No commands yet. Add the one you run while developing.
+            </button>
+          ) : (
+            <div className="divide-y divide-line overflow-hidden rounded-xl bg-surface">
+              {node.services.map((s) => (
+                <CommandRow
+                  key={s.id}
+                  service={s}
+                  state={states[s.id]}
+                  actions={actions}
+                  onSelect={() => actions.select({ kind: "service", id: s.id })}
+                  onEdit={() => onEditService(s)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </>
@@ -273,46 +317,46 @@ function ProjectCard({ node, states, actions, icon }: { node: ProjectNode; state
     const st = states[s.id];
     return st?.state === "running" && st.port ? [st.port] : [];
   });
+  const stack = techName(icon);
   return (
-    <div className={cn("flex flex-col rounded-xl bg-surface p-3.5 transition-colors", live > 0 && "ring-1 ring-accent/30")}>
-      <button className="min-w-0 text-left" onClick={() => actions.select({ kind: "project", id: node.project.id })}>
-        <p className="flex items-center gap-2 truncate text-headline hover:text-accent">
-          {icon && <ProjectLogo logo={icon} size={16} />}
-          {node.project.name}
-        </p>
-        <p className="mt-1 flex items-center gap-1.5 text-subheadline text-muted tabular-nums">
-          {live ? (
-            <>
-              <span className="h-1.5 w-1.5 rounded-full bg-ok" />
-              <span className="text-ok">{live} running</span>
-              {ports.length > 0 && <span className="font-mono text-dim">· {ports.map((p) => `:${p}`).join(" ")}</span>}
-            </>
-          ) : (
-            "Nothing running"
-          )}
-        </p>
+    <div className="flex flex-col rounded-xl bg-surface p-4">
+      <button className="flex min-w-0 items-center gap-3 text-left" onClick={() => actions.select({ kind: "project", id: node.project.id })}>
+        <LogoTile logo={icon} name={node.project.name} size={32} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-headline hover:underline">{node.project.name}</span>
+          <span className="mt-0.5 block truncate text-subheadline text-dim">{stack ?? `${node.services.length} command${node.services.length === 1 ? "" : "s"}`}</span>
+        </span>
       </button>
-      <ul className="mt-3 mb-3 flex flex-col gap-1.5">
+      <ul className="mt-4 mb-4 flex flex-col gap-2">
         {node.services.slice(0, 3).map((s) => (
-          <li key={s.id} className="flex h-5 items-center gap-2">
+          <li key={s.id} className="flex h-4 items-center gap-2">
             <StatusDot state={states[s.id]} />
             <span className={cn("min-w-0 flex-1 truncate text-callout", isLive(states[s.id]) ? "text-fg" : "text-muted")}>{s.name}</span>
             <span className="truncate font-mono text-footnote text-dim">{s.command}</span>
           </li>
         ))}
-        {node.services.length === 0 && <li className="flex h-5 items-center text-subheadline text-dim">No commands yet</li>}
+        {node.services.length > 3 && <li className="text-subheadline text-dim">+{node.services.length - 3} more</li>}
+        {node.services.length === 0 && <li className="text-subheadline text-dim">No commands yet</li>}
       </ul>
       <div className="mt-auto flex items-center justify-between gap-2">
-        <span className="text-subheadline text-dim">
-          {node.services.length > 3 ? `+${node.services.length - 3} more` : `${node.services.length} command${node.services.length === 1 ? "" : "s"}`}
+        <span className="truncate text-subheadline text-dim tabular-nums">
+          {live ? (
+            <>
+              <span className="text-fg">{live} running</span>
+              {ports.length > 0 && <span className="font-mono"> · {ports.map((p) => `:${p}`).join(" ")}</span>}
+            </>
+          ) : (
+            "Stopped"
+          )}
         </span>
         {node.services.length > 0 &&
           (live ? (
-            <Button onClick={() => actions.stopProject(node.project.id)} className="min-w-20">
+            <Button onClick={() => actions.stopProject(node.project.id)} className="min-w-16">
               Stop
             </Button>
           ) : (
-            <Button variant="primary" onClick={() => actions.startProject(node.project.id)} className="min-w-20">
+            <Button variant="ghost" onClick={() => actions.startProject(node.project.id)} className="min-w-16 text-muted hover:text-accent">
+              <HugeiconsIcon icon={PlayIcon} size={12} strokeWidth={2} />
               Start
             </Button>
           ))}
@@ -358,14 +402,11 @@ export function GroupView({
             </Button>
           ))}
       </TitleBar>
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-        <p className="mb-5 text-body text-muted">
-          Start a group to run every command in it, subgroups included. Stop brings the whole tree down, child processes too.
-        </p>
+      <div className="min-h-0 flex-1 overflow-y-auto px-6 pt-4 pb-6">
         {all.length === 0 && <p className="text-callout text-dim">This group is empty. Move projects here from their “…” menu.</p>}
         {sections.map((label) => (
-          <section key={label || "_"} className="mb-6">
-            {label && <h3 className="mb-2 text-headline text-muted">{label}</h3>}
+          <section key={label || "_"} className="mb-7">
+            {label && <h3 className="mb-2 text-subheadline font-medium tracking-wide text-dim uppercase">{label}</h3>}
             <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
               {all
                 .filter((a) => a.label === label)

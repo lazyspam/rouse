@@ -58,16 +58,35 @@ function visible(hex: string) {
   return lum < 0.25 ? "var(--color-fg)" : `#${hex}`;
 }
 
+/** The stack's display name ("NestJS", "Next.js"), if known. */
+export function techName(logo?: Logo) {
+  return logo?.tech ? TECH[logo.tech]?.title : undefined;
+}
+
 /** The project's own logo, else its stack's (NestJS, Express, Rust…), else a quiet gap. */
 export function ProjectLogo({ logo, size = 14 }: { logo?: Logo; size?: number }) {
-  if (logo?.kind === "image") {
+  if (logo?.src) {
     return <img src={logo.src} alt="" width={size} height={size} className="shrink-0 rounded-[3px] object-contain" />;
   }
-  const icon = logo?.kind === "tech" ? TECH[logo.slug] : undefined;
+  const icon = logo?.tech ? TECH[logo.tech] : undefined;
   if (!icon) return <span className="shrink-0" style={{ width: size }} />;
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} className="shrink-0" fill={visible(icon.hex)} role="img" aria-label={icon.title}>
       <path d={icon.path} />
     </svg>
+  );
+}
+
+/** The logo on a small raised tile, or the project's initial when there is none. */
+export function LogoTile({ logo, name, size = 36 }: { logo?: Logo; name: string; size?: number }) {
+  const known = logo?.src || (logo?.tech && TECH[logo.tech]);
+  return (
+    <span className="flex shrink-0 items-center justify-center rounded-[9px] bg-raised" style={{ width: size, height: size }}>
+      {known ? (
+        <ProjectLogo logo={logo} size={Math.round(size * 0.5)} />
+      ) : (
+        <span className="text-headline text-muted uppercase">{name.slice(0, 1)}</span>
+      )}
+    </span>
   );
 }
