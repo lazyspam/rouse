@@ -17,8 +17,8 @@ Download from [Releases](https://github.com/iput-object/rouse/releases):
 | macOS | `.dmg` for Apple Silicon (`aarch64`) or Intel (`x64`) |
 
 ```sh
-sudo apt install ./rouse_0.1.1_amd64.deb      # Debian, Ubuntu
-sudo dnf install ./rouse-0.1.1-1.x86_64.rpm   # Fedora
+sudo apt install ./rouse_0.1.2_amd64.deb      # Debian, Ubuntu
+sudo dnf install ./rouse-0.1.2-1.x86_64.rpm   # Fedora
 ```
 
 The macOS and Windows builds aren't signed yet, so the first launch asks you to confirm (macOS: right-click → Open). On Windows there is no login shell to read, Stop ends the process tree with `taskkill`, and crash cleanup is Linux-only.
