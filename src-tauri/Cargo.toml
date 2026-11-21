@@ -1,6 +1,6 @@
 [package]
 name = "rouse"
-version = "0.1.2"
+version = "0.1.3"
 description = "Remember every dev command you run, then start whole projects from one window"
 authors = ["iput-object"]
 license = "GPL-3.0-only"
