@@ -8,6 +8,12 @@ use tauri::{
 
 use crate::commands::AppState;
 
+/// Tray id, unique to this app. On Linux the tray library derives the
+/// indicator id and the temp icon file (`$XDG_RUNTIME_DIR/tray-icon/tray-icon-<id>-N.png`)
+/// from it, so a generic id like "main" collides with other Tauri apps: they
+/// overwrite each other's icon file and show up as duplicate icons.
+const TRAY_ID: &str = "rouse-tray";
+
 pub fn show_main(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.show();
@@ -18,7 +24,7 @@ pub fn show_main(app: &AppHandle) {
 
 pub fn create(app: &AppHandle) -> tauri::Result<()> {
     // A lingering tray (hot reload) would make libayatana warn "already exported".
-    if app.tray_by_id("main").is_some() {
+    if app.tray_by_id(TRAY_ID).is_some() {
         return Ok(());
     }
     let open = MenuItemBuilder::with_id("open", "Open rouse").build(app)?;
@@ -26,7 +32,7 @@ pub fn create(app: &AppHandle) -> tauri::Result<()> {
     let quit = MenuItemBuilder::with_id("quit", "Quit rouse").build(app)?;
     let menu = MenuBuilder::new(app).item(&open).item(&stop).separator().item(&quit).build()?;
 
-    let mut builder = TrayIconBuilder::with_id("main")
+    let mut builder = TrayIconBuilder::with_id(TRAY_ID)
         .tooltip("rouse")
         .menu(&menu)
         .show_menu_on_left_click(false)
