@@ -3,10 +3,27 @@ import type { State } from "../services/tauri";
 import type { Updater } from "../hooks/useUpdater";
 import { cn } from "../utils/cn";
 import { TotalUsage } from "./Usage";
+import { useCopy } from "../hooks/useCopy";
 
 export type Notice = { text: string; tone: "info" | "error" };
 
 type Props = { states: Record<string, State>; notice: Notice | null; onStopAll: () => void; updater: Updater };
+
+/** A running port: click opens it, right-click copies its URL. */
+function PortButton({ port }: { port: number }) {
+  const url = `http://localhost:${port}`;
+  const { copied, copy } = useCopy();
+  return (
+    <button
+      onClick={() => void openUrl(url)}
+      onContextMenu={() => copy(url)}
+      title={`Open ${url}\nRight-click to copy`}
+      className={cn("rounded px-1 font-mono hover:bg-raised hover:text-accent", copied ? "text-accent" : "text-muted")}
+    >
+      {copied ? "Copied" : `:${port}`}
+    </button>
+  );
+}
 
 /** The update offer, when there is one: install, progress, then restart. */
 function UpdateNote({ updater }: { updater: Updater }) {
@@ -47,9 +64,7 @@ export function StatusBar({ states, notice, onStopAll, updater }: Props) {
           {ports.length > 0 && (
             <span className="flex items-center gap-1 text-dim">
               {ports.map((p) => (
-                <button key={p} onClick={() => void openUrl(`http://localhost:${p}`)} className="rounded px-1 font-mono text-muted hover:bg-raised hover:text-accent">
-                  :{p}
-                </button>
+                <PortButton key={p} port={p} />
               ))}
             </span>
           )}

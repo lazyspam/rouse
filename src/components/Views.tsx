@@ -13,6 +13,7 @@ import {
   PencilEdit02Icon,
   PlayIcon,
   StopIcon,
+  Tick02Icon,
 } from "@hugeicons/core-free-icons";
 import logo from "../assets/logo.svg";
 import { api, isLive, type Effective, type Logo, type Project, type Service, type State, type Tree } from "../services/tauri";
@@ -29,17 +30,21 @@ import type { Actions } from "./Sidebar";
 import { LogoTile, techName } from "./ProjectLogo";
 import { duration, useNow } from "../utils/time";
 import { ServiceUsage } from "./Usage";
+import { useCopy } from "../hooks/useCopy";
 
 
 function PortLink({ port }: { port: number }) {
+  const url = `http://localhost:${port}`;
+  const { copied, copy } = useCopy();
   return (
     <button
-      onClick={() => void openUrl(`http://localhost:${port}`)}
+      onClick={() => void openUrl(url)}
+      onContextMenu={(e) => (e.stopPropagation(), copy(url))}
       className="inline-flex items-center gap-1 rounded px-1 font-mono text-callout text-accent hover:bg-accent/10"
-      title={`Open http://localhost:${port}`}
+      title={`Open ${url}\nRight-click to copy`}
     >
-      localhost:{port}
-      <HugeiconsIcon icon={ArrowUpRight01Icon} size={11} strokeWidth={2.2} />
+      {copied ? "Copied" : `localhost:${port}`}
+      <HugeiconsIcon icon={copied ? Tick02Icon : ArrowUpRight01Icon} size={11} strokeWidth={2.2} />
     </button>
   );
 }
