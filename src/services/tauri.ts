@@ -175,3 +175,22 @@ export const envLines = (env: Record<string, string>) =>
   Object.entries(env)
     .map(([k, v]) => `${k}=${v}`)
     .join("\n");
+
+/** CPU (percent of one core, so it can pass 100) and resident memory in bytes. */
+export type Usage = { cpu: number; memory: number; processes: number };
+export type Stats = {
+  /** Running services by id; each is its whole process tree. */
+  services: Record<string, Usage>;
+  /** rouse itself (window and webview), services left out. */
+  app: Usage;
+  /** Whole machine, 0–100 over all cores. */
+  systemCpu: number;
+  memoryUsed: number;
+  memoryTotal: number;
+  cores: number;
+};
+
+/** Sampled every 2 s while the window shows. */
+export function onStats(handler: (s: Stats) => void) {
+  return listen<Stats>("rouse://stats", (e) => handler(e.payload));
+}

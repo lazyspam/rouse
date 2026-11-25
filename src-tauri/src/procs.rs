@@ -454,6 +454,11 @@ impl Manager {
         self.0.procs.lock().unwrap().values().map(|p| p.pid).collect()
     }
 
+    /// Services with a live process (running or stopping) and their leader pids.
+    pub fn live_pids(&self) -> Vec<(ServiceId, u32)> {
+        self.0.procs.lock().unwrap().iter().map(|(id, p)| (*id, p.pid)).collect()
+    }
+
     /// The buffered output, as text the terminal view can replay.
     pub fn output(&self, id: ServiceId) -> String {
         let output = self.0.output.lock().unwrap();

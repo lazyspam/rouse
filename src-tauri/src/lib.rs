@@ -2,6 +2,7 @@
 //!
 //! - `scan` finds projects and suggests commands; `store` remembers what you keep.
 //! - `procs` runs each command in a PTY and stops its whole process tree.
+//! - `stats` samples CPU and memory per service, emitted every couple of seconds.
 //! - `env` gives commands your login shell's environment (nvm, pnpm on PATH).
 //! - `orphans` cleans up after a crash. Quitting, the tray's Quit, and SIGTERM at logout all
 //!   stop every running service first.
@@ -14,6 +15,7 @@ mod orphans;
 mod overrides;
 mod procs;
 mod scan;
+mod stats;
 mod store;
 mod tray;
 
@@ -24,6 +26,9 @@ use tauri::{AppHandle, Emitter, Manager, RunEvent, Runtime};
 
 use commands::AppState;
 use procs::Sink;
+
+/// How often resource use is sampled while the window shows.
+const STATS_EVERY: Duration = Duration::from_secs(2);
 
 /// Remember the running process groups, so a crash can be cleaned up next launch.
 pub(crate) fn record_live<R: Runtime>(app: &AppHandle<R>) {
@@ -70,6 +75,20 @@ pub fn run() {
             });
             let procs = procs::Manager::new(env::login_env(Duration::from_secs(8)), sink);
             app.manage(AppState { store, procs });
+
+            // Resource use, only while the window is showing (rouse lives in the tray).
+            let handle = app.handle().clone();
+            std::thread::spawn(move || {
+                let Some(mut sampler) = stats::Sampler::new() else { return };
+                loop {
+                    let visible = handle.get_webview_window("main").and_then(|w| w.is_visible().ok()).unwrap_or(false);
+                    if visible {
+                        let live = handle.state::<AppState>().procs.live_pids();
+                        let _ = handle.emit("rouse://stats", sampler.sample(&live));
+                    }
+                    std::thread::sleep(STATS_EVERY);
+                }
+            });
 
             // Logout and `kill` send SIGTERM/SIGHUP: stop services before going.
             #[cfg(unix)]

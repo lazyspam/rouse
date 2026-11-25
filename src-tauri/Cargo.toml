@@ -25,6 +25,7 @@ rusqlite = { version = "0.43", features = ["bundled"] }
 portable-pty = "0.9"
 regex = "1"
 base64 = "0.23"
+sysinfo = { version = "0.40.4", default-features = false, features = ["system"] }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

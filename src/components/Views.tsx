@@ -28,6 +28,7 @@ import { TitleBar } from "./TitleBar";
 import type { Actions } from "./Sidebar";
 import { LogoTile, techName } from "./ProjectLogo";
 import { duration, useNow } from "../utils/time";
+import { ServiceUsage } from "./Usage";
 
 
 function PortLink({ port }: { port: number }) {
@@ -155,6 +156,7 @@ export function ServiceView({
           {state?.state === "running" && <Uptime since={state.startedAt} />}
         </span>
         {state?.state === "running" && state.port && <PortLink port={state.port} />}
+        {live && <ServiceUsage id={service.id} />}
         {restarts > 0 && <span title="Automatic restarts since you started it" className="text-callout text-dim">↻ {restarts}</span>}
         {crashed && (
           <button onClick={() => void copyOutput(true)} className="inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-callout text-danger ring-1 ring-danger/30 hover:bg-danger/10">
@@ -204,6 +206,7 @@ function CommandRow({ service, state, actions, onSelect, onEdit }: { service: Se
       {state?.state === "running" ? (
         <>
           {state.port && <PortLink port={state.port} />}
+          <ServiceUsage id={service.id} />
           <span className="w-16 text-right text-callout text-dim">
             <Uptime since={state.startedAt} />
           </span>

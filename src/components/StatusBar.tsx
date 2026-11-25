@@ -2,6 +2,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import type { State } from "../services/tauri";
 import type { Updater } from "../hooks/useUpdater";
 import { cn } from "../utils/cn";
+import { TotalUsage } from "./Usage";
 
 export type Notice = { text: string; tone: "info" | "error" };
 
@@ -59,6 +60,7 @@ export function StatusBar({ states, notice, onStopAll, updater }: Props) {
       ) : (
         <span className="text-dim">Nothing running</span>
       )}
+      <TotalUsage />
       <div className="ml-auto flex min-w-0 items-center">
         {notice ? (
           <span title={notice.text} className={cn("truncate", notice.tone === "error" ? "text-danger" : "text-muted")}>
