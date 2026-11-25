@@ -10,6 +10,18 @@
   color-scheme: dark;
 }
 
+/* WebKitGTK draws number spinners as light GTK widgets whatever the color-scheme says.
+   Typing is quicker for ports and seconds anyway, and the arrow keys still step. */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 @theme {
   --color-bg: #0f0f0f;
   --color-surface: #090909;
