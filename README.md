@@ -2,13 +2,13 @@
 
 Wake your dev stack. rouse remembers the commands that start your projects, so the next time you need them they're one click away, grouped the way your folders are.
 
-Muffle quiets things down; rouse wakes them up. Same family as [GitSwitch](https://github.com/iput-object/GitSwitch) and [muffle](https://github.com/iput-object/muffle): Tauri 2, Rust, React, one accent colour.
+Muffle quiets things down; rouse wakes them up. Same family as [GitSwitch](https://github.com/lazyspam/GitSwitch) and muffle: Tauri 2, Rust, React, one accent colour.
 
 ![A service running in rouse, with its port and dependency badges](docs/screenshots/service.png)
 
 ## Install
 
-Download from [Releases](https://github.com/iput-object/rouse/releases):
+Download from [Releases](https://github.com/lazyspam/rouse/releases):
 
 | Platform | Files |
 | --- | --- |
