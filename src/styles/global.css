@@ -5,6 +5,11 @@
 /* rouse palette: black, white and one primary (the orange of the logo's sun).
    Surfaces are told apart by shade, not by borders. Red is kept for crashes only.
    To change the primary, change --color-accent (and its strong / ok / warn uses). */
+/* Native controls (select popups, number spinners, scrollbars) follow the dark theme. */
+:root {
+  color-scheme: dark;
+}
+
 @theme {
   --color-bg: #0f0f0f;
   --color-surface: #090909;

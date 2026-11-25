@@ -16,6 +16,8 @@ import {
   type Service,
   type StopSignal,
 } from "../services/tauri";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import { cn } from "../utils/cn";
 import { Button } from "./ui/Button";
 import { Dialog } from "./ui/Dialog";
@@ -46,18 +48,22 @@ function Select({ label, value, onChange, options, hint }: { label: string; valu
   return (
     <label className="flex flex-col gap-1.5">
       <span className="text-callout text-muted">{label}</span>
-      <select
-        aria-label={label}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-8 rounded-md bg-bg px-2 text-body text-fg ring-1 ring-line focus:ring-accent/50 focus:outline-none"
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+      {/* appearance-none: WebKitGTK otherwise draws a light GTK box and the white text vanishes. */}
+      <span className="relative flex">
+        <select
+          aria-label={label}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-8 w-full appearance-none rounded-md bg-bg pr-7 pl-2.5 text-body text-fg ring-1 ring-line focus:ring-accent/50 focus:outline-none"
+        >
+          {options.map((o) => (
+            <option key={o.value} value={o.value} className="bg-raised text-fg">
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <HugeiconsIcon icon={ArrowDown01Icon} size={14} strokeWidth={2} className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-dim" />
+      </span>
       {hint && <span className="text-subheadline text-dim">{hint}</span>}
     </label>
   );
